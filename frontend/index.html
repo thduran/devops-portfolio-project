@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Front simples</title>
+    <script>
+      async function carregar() {
+        const res = await fetch("/api");
+        const data = await res.json();
+        document.getElementById("msg").textContent = data.message;
+      }
+      window.onload = carregar;
+    </script>
+  </head>
+  <body>
+    <h1 id="msg">Carregando…</h1>
+  </body>
+</html>
