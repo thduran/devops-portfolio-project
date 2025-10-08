@@ -4,6 +4,13 @@ services:
   backend:
     build: ./backend
     container_name: backend
+    environment:
+      # check .env
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
+    depends_on:
+      - db # database has to initialize first
+    networks:
+      - app-net
     ports:
       - "5000:5000"
 
@@ -14,3 +21,27 @@ services:
       - "8080:80"
     depends_on:
       - backend
+    networks:
+      - app-net
+  
+  db:
+    image: postgres:15-alpine
+    container_name: db
+    environment:
+    # check .env
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      # mounts volume named 'postgres-data' in the data dir
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+volumes:
+  postgres-data:
+    driver: local #volume managed by Docker in localhost
+
+networks:
+  app-net:
+    driver: bridge

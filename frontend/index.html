@@ -1,18 +1,52 @@
-<!doctype html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <title>Front simples</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Project FullStack-Docker</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+        ul { list-style: none; padding: 0; }
+        li { background-color: #f0f0f0; margin: 5px auto; padding: 10px; border-radius: 5px; max-width: 300px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h1>Welcome!</h1>
+    <p>This frontend (nginx) is communicating with backend (flask).</p>
+
+    <button onclick="fetchVisitors()">Load and add visitor</button>
+
+    <h2>List of Visitors:</h2>
+    <ul id="visitor-list">
+        </ul>
+
     <script>
-      async function carregar() {
-        const res = await fetch("/api");
-        const data = await res.json();
-        document.getElementById("msg").textContent = data.message;
-      }
-      window.onload = carregar;
+        async function fetchVisitors() {
+            const listElement = document.getElementById('visitor-list');
+            listElement.innerHTML = '<li>Loading...</li>';
+            try {
+                // The call to /api will be intercepted by Nginx and sent to backend
+                const response = await fetch('/api');
+                const data = await response.json();
+                listElement.innerHTML = '';
+                if (data.visitors && data.visitors.length > 0) {
+                    data.visitors.forEach(visitor => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = visitor;
+                        listElement.appendChild(listItem);
+                    });
+                } else {
+                    listElement.innerHTML = '<li>No visitors yet.</li>';
+                }
+            } catch (error) {
+                console.error('Error searching for visitors:', error);
+                listElement.innerHTML = '<li>Error loading data.</li>';
+            }
+        }
+        // Loads visitors when page opens for the first time
+        fetchVisitors();
     </script>
-  </head>
-  <body>
-    <h1 id="msg">Carregando…</h1>
-  </body>
+
+</body>
 </html>
