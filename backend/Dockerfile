@@ -1,51 +1,59 @@
 # ---- Build stage ----
-# A tag específica (.1) garante que o build seja sempre o mesmo.
-FROM python:3.12.1-slim as builder
+# based on Wolfi (OS focused on security)
+FROM cgr.dev/chainguard/python:latest-dev AS builder
 
-# Define o diretório de trabalho
 WORKDIR /app
 
-# impede que Python gere arquivos .pyc, que são desnecessários e ocupam espaço.
-ENV PYTHONDONTWRITEBYTECODE 1
-# Pra que logs apareçam no console do Docker, facilitando o debug
-ENV PYTHONUNBUFFERED 1
+# Avoid .pyc files and buffered logs
+ENV PYTHONDONTWRITEBYTECODE=1
+# For logs to appear on docker console, facilitating debug
+ENV PYTHONUNBUFFERED=1
 
-# Feito antes de copiar código pra aproveitar cache - Se só o código mudar, Docker não reinstala tudo.
+USER root
+
+# Creates app user. Wolfi uses /etc/apk/keys as standard dir
+RUN addgroup --system app && adduser --system --ingroup app app
+
+# Install build dependencies for psycopg (binary wheel deve evitar compilação, mas fallback)
+RUN apk update && apk add postgresql-dev build-base
+
+# To use cache, copy is made before code copy - if only the code changes, Docker doesn't reinstall everything
 COPY requirements.txt .
 
-# --no-cache-dir ajuda a manter a imagem menor
-# install --user instala pacotes em um diretório do usuário 
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Updates pip and tools of Python installation (setuptools and wheel)
+RUN python3 -m pip install --upgrade pip setuptools wheel
 
-# Copia o código da aplicação
+# --no-cache-dir helps to maintain a smaller image
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY app.py .
 
 # ---- Final stage ----
-FROM python:3.12.1-slim
+FROM cgr.dev/chainguard/python:latest
 
-# Para não rodar como root, por segurança
-RUN addgroup --system app && adduser --system --group app
+WORKDIR /app
 
-# Define o diretório de trabalho
-WORKDIR /home/app
+# Copies user definition of builder
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
 
-# Força python a procurar pacotes no diretório correto
-ENV PYTHONPATH=/home/app/.local/lib/python3.12/site-packages
+# Copies python packages installed in builder
+COPY --from=builder /usr/lib/python*/site-packages /usr/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copia da imagem builder tudo que foi instalado via pip (/root/.local)
-# --chown garante que o usuário app seja o dono
-COPY --from=builder --chown=app:app /root/.local /home/app/.local
-
-# Copia o arquivo do app da imagem builder pro workdir da imagem final
-# Só o necessário é trazido: app e dependências.
+# Copies app.py of builder
+# Only what's necessary is brought: app and packages.
 COPY --from=builder --chown=app:app /app/app.py .
 
-# Adiciona o caminho onde as dependências Python foram instaladas (/home/app/.local/bin) ao PATH.
-# Comandos instalados via pip podem ser executados sem precisar de caminho completo.
-ENV PATH="/home/app/.local/bin:${PATH}"
+# Diz ao Python para procurar pacotes neste diretório
+ENV PYTHONPATH="/usr/lib/python3.12/site-packages"
 
-# Muda para o usuário não-root
+# Garantindo que o PATH inclui Python e pip (PATH base já tem /usr/bin)
+ENV PATH="/usr/local/bin:${PATH}"
+
 USER app
 
-# Comando para executar a aplicação
-CMD ["python", "app.py"]
+EXPOSE 5000
+
+# CMD omitindo python3 (ENTRYPOINT da imagem adiciona)
+CMD ["-m", "flask", "--app", "app.py", "run", "--host=0.0.0.0"]

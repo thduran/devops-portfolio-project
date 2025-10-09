@@ -19,9 +19,12 @@ RUN rm /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/index.html /usr/share/nginx/html/index.html
 COPY --from=builder /app/nginx.conf /etc/nginx/conf.d/default.conf
 
-# (Opcional) Adiciona healthcheck para verificar se nginx está respondendo
+# installing curl used in line 26
+RUN apk add --no-cache curl
+
+# (Optional) Adds healthcheck to check if nginx is responding
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+  CMD curl -f http://localhost/ || exit 1
 
 # Para documentação
 EXPOSE 80

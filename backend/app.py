@@ -48,10 +48,26 @@ def api_visitors():
     visitors = Visitor.query.all()
     visitor_list = [v.name for v in visitors]
     
-    return jsonify(message="Hi from backend!", visitors=visitor_list)
+    return jsonify(message="testing live reload", visitors=visitor_list)
 
-with app.app_context():
-    init_db()
+@app.route("/health")
+def health_check():
+    try:
+        # tries to run a query to check connection
+        db.session.execute(db.text('SELECT 1'))
+        return jsonify(status="OK"), 200
+    except Exception as e:
+        # returns error 503 (service unavailable), if it fails
+        return jsonify(status="error", details=str(e)), 503
+
+@app.before_request
+def before_request():
+    if not hasattr(app, "_db_initialized"):
+        try:
+            init_db()
+            app._db_initialized = True
+        except Exception as e:
+            print("Database not ready yet:", e)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
