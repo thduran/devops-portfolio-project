@@ -11,10 +11,10 @@ ENV PYTHONUNBUFFERED=1
 
 USER root
 
-# Creates app user. Wolfi uses /etc/apk/keys as standard dir
+# Creates non-root user "app" (for security) 
 RUN addgroup --system app && adduser --system --ingroup app app
 
-# Install build dependencies for psycopg (binary wheel deve evitar compilação, mas fallback)
+# Installs tools to build 'psycopg' from scratch, in case quick install fails.
 RUN apk update && apk add postgresql-dev build-base
 
 # To use cache, copy is made before code copy - if only the code changes, Docker doesn't reinstall everything
@@ -41,19 +41,18 @@ COPY --from=builder /etc/group /etc/group
 COPY --from=builder /usr/lib/python*/site-packages /usr/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copies app.py of builder
-# Only what's necessary is brought: app and packages.
+# Copies app.py of builder. Only what's necessary is brought: app and packages
 COPY --from=builder --chown=app:app /app/app.py .
 
-# Diz ao Python para procurar pacotes neste diretório
+# Set PYTHONPATH so that the minimalist image's Python (Chainguard) can find the packages copied from the build stage
 ENV PYTHONPATH="/usr/lib/python3.12/site-packages"
 
-# Garantindo que o PATH inclui Python e pip (PATH base já tem /usr/bin)
+# Adds pip executables to PATH so that commands like 'flask' can be run
 ENV PATH="/usr/local/bin:${PATH}"
 
 USER app
 
 EXPOSE 5000
 
-# CMD omitindo python3 (ENTRYPOINT da imagem adiciona)
+# CMD omitting 'python3' (image adds it as ENTRYPOINT by standard)
 CMD ["-m", "flask", "--app", "app.py", "run", "--host=0.0.0.0"]

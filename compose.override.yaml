@@ -1,12 +1,12 @@
 version: "3.9"
 
 services:
-  backend:    # telling compose I want to modify the backend service config
+  backend:    # Tells compose we want to modify the backend service config
     environment:
       FLASK_DEBUG: 1
     command: ["-m", "flask", "--app", "app.py", "run", "--host=0.0.0.0"]
     volumes:
-      - ./backend:/app    # Maps the local code to the workdir inside the container. What changes in ./backend (local), also changes instantaneously in /app (container).
+      - ./backend:/app    # Maps the local code to the workdir inside the container. What changes in ./backend (local), also changes instantaneously in /app (container)
     healthcheck:
       test: ["CMD", "python3", "-c", "import sys, requests; r=requests.get('http://localhost:5000/health', timeout=5); sys.exit(0 if r.status_code==200 else 1)"]
       interval: 30s

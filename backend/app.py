@@ -48,7 +48,7 @@ def api_visitors():
     visitors = Visitor.query.all()
     visitor_list = [v.name for v in visitors]
     
-    return jsonify(message="testing live reload", visitors=visitor_list)
+    return jsonify(message="List of visitors", visitors=visitor_list)
 
 @app.route("/health")
 def health_check():

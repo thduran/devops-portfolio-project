@@ -4,11 +4,10 @@ services:
   backend:
     build: ./backend
     container_name: backend
-    environment:
-      # check .env
+    environment:    # check .env
       DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
     depends_on:
-      db: # database has to initialize first
+      db:    # database has to initialize first
         condition: service_healthy
     networks:
       - app-net
@@ -18,7 +17,7 @@ services:
   frontend:
     build: ./frontend
     container_name: frontend
-    restart: unless-stopped # docker tries to restart container, only if not stopped by user
+    restart: unless-stopped    # docker tries to restart container, only if not stopped by user
     ports:
       - "8080:80"
     depends_on:
@@ -30,14 +29,12 @@ services:
   db:
     image: postgres:15-alpine
     container_name: db
-    restart: unless-stopped # docker tries to restart container, only if not stopped by user
-    environment:
-    # check .env
+    restart: unless-stopped    # docker tries to restart container, only if not stopped by user
+    environment:    # check .env
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      # mounts volume named 'postgres-data' in the data dir
+    volumes:    # mounts volume named 'postgres-data' in the data dir
       - postgres-data:/var/lib/postgresql/data
     networks:
       - app-net
@@ -49,7 +46,7 @@ services:
 
 volumes:
   postgres-data:
-    driver: local #volume managed by Docker in localhost
+    driver: local    # volume managed by Docker in localhost
 
 networks:
   app-net:
