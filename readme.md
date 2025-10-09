@@ -73,8 +73,8 @@ This eliminated the need to rebuild the image after every change, speeding up de
 
 3. **Secure image (zero-CVE)**
 
-a. **Baseline**: the first backend image, based on `python:3.12-slim`, was scanned with Trivy and revealed 200+ vulnerabilities.
-b. **First optimization (distroless)**: refactored to use `gcr.io/distroless/python3-debian12`, reducing the attack surface -> new scan showed 49 vulnerabilities.
+a. **Baseline**: the first backend image, based on `python:3.12-slim`, was scanned with Trivy and revealed 200+ vulnerabilities. \
+b. **First optimization (distroless)**: refactored to use `gcr.io/distroless/python3-debian12`, reducing the attack surface -> new scan showed 49 vulnerabilities. \
 c. **Final optimization (Chainguard)**: migrated to `cgr.dev/chainguard/python`, ultra-minimal and security-focused. New Trivy scan revealed zero OS-level vulnerabilities.
 
 4. **Challenges with minimalist images**
